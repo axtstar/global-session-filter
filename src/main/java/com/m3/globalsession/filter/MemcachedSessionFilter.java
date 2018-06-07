@@ -16,7 +16,9 @@
 package com.m3.globalsession.filter;
 
 import com.m3.globalsession.store.MemcachedSessionStore;
+import com.m3.globalsession.store.SessionStore;
 import com.m3.memcached.facade.Configuration;
+import com.m3.memcached.facade.MemcachedClient;
 import com.m3.memcached.facade.MemcachedClientPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,14 @@ public class MemcachedSessionFilter extends GlobalSessionFilter implements Filte
 
     private MemcachedClientPool memcached;
 
+    public void setSessionStore(SessionStore store){
+        this.store = store;
+    }
+
+    public void setMemcachedClientPool(MemcachedClientPool memcached){
+        this.memcached = memcached;
+    }
+
     protected List<InetSocketAddress> getMemcachedServerAddresses(FilterConfig config) {
         List<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
         String servers = getConfigValue(config, MEMCACHED_SERVERS_KEY);
@@ -56,9 +66,7 @@ public class MemcachedSessionFilter extends GlobalSessionFilter implements Filte
         return addresses;
     }
 
-    @Override
-    public void init(FilterConfig config) throws ServletException {
-        super.init(config);
+    protected void initialize(FilterConfig config) {
         try {
             Configuration memcachedConfig = new Configuration();
             memcachedConfig.setNamespace("global-session-filter");
@@ -69,7 +77,12 @@ public class MemcachedSessionFilter extends GlobalSessionFilter implements Filte
             String message = "Failed to instantiate MemcachedClient because of " + e.getMessage();
             throw new IllegalStateException(message, e);
         }
+    }
 
+    @Override
+    public void init(FilterConfig config) throws ServletException {
+        super.init(config);
+        initialize(config);
     }
 
     public void shutdownMemcachedClientPool() {

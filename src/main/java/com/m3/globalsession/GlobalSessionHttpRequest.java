@@ -20,13 +20,15 @@ import com.m3.globalsession.store.SessionStore;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpSession;
 
 public class GlobalSessionHttpRequest extends HttpServletRequestWrapper {
 
     private final String sessionId;
     private final String namespace;
     private final SessionStore store;
-    private final GlobalHttpSession session;
+    private GlobalHttpSession session;
+    private final Integer timeoutMinutes;
 
     public GlobalSessionHttpRequest(ServletRequest request, String sessionId, String namespace,
                                     Integer timeoutMinutes, SessionStore store) {
@@ -34,16 +36,18 @@ public class GlobalSessionHttpRequest extends HttpServletRequestWrapper {
         this.sessionId = sessionId;
         this.namespace = namespace;
         this.store = store;
+        this.timeoutMinutes = timeoutMinutes;
         session = new GlobalHttpSession(sessionId, store, namespace, timeoutMinutes, super.getSession());
     }
 
     @Override
-    public GlobalHttpSession getSession() {
-        return session;
-    }
+    public GlobalHttpSession getSession(){ return getSession(true); }
 
     @Override
     public GlobalHttpSession getSession(boolean create) {
+        if(session==null || !session.isValid()){
+            session = new GlobalHttpSession(sessionId, store, namespace, timeoutMinutes, super.getSession());
+        }
         return session;
     }
 
